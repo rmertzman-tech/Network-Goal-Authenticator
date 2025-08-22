@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Goal Authenticator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .step-card {
+            transition: all 0.3s ease-in-out;
+        }
+        .remove-stakeholder-btn:disabled {
+            color: #d1d5db; /* gray-300 */
+            cursor: not-allowed;
+        }
+        #explanation-modal-content {
+            max-height: 70vh;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Network Goal Authenticator</h1>
+            <p class="mt-2 text-gray-600">A tool to distinguish genuine network goals from pseudo-coordination.</p>
+            <div class="mt-4 flex justify-center gap-4">
+                 <button id="startNewBtn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition">
+                    Start New Project
+                </button>
+                <button id="demoBtn" class="bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-800 transition flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-lightbulb" viewBox="0 0 16 16">
+                        <path d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13a.5.5 0 0 1 0 1 .5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1 0-1 .5.5 0 0 1 0-1 .5.5 0 0 1-.46-.302l-.761-1.77a1.964 1.964 0 0 0-.453-.618A5.984 5.984 0 0 1 2 6zm6 8.5a.5.5 0 0 1 .5-.5h.002a.5.5 0 0 1 0 1H8.5a.5.5 0 0 1-.5-.5z"/>
+                    </svg>
+                    Load Demo Example
+                </button>
+                <button id="showExplanationBtn" class="bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-purple-700 transition hidden">
+                    Show Explanation
+                </button>
+            </div>
+        </header>
+
+        <main id="app-content" class="space-y-6">
+            <!-- Step 1: Define the Goal -->
+            <div id="step1" class="step-card bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <span class="bg-blue-500 text-white rounded-full h-8 w-8 flex items-center justify-center font-bold">1</span>
+                    Define the Goal
+                </h2>
+                <div class="mt-4 space-y-4">
+                    <div>
+                        <label for="problem" class="block text-sm font-medium text-gray-700">Describe the coordination problem you want to solve.</label>
+                        <textarea id="problem" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                    </div>
+                    <div>
+                        <label for="goal" class="block text-sm font-medium text-gray-700">What is the proposed 'Network Goal' to address this problem?</label>
+                        <input type="text" id="goal" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Identify Stakeholders -->
+            <div id="step2" class="step-card bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <span class="bg-blue-500 text-white rounded-full h-8 w-8 flex items-center justify-center font-bold">2</span>
+                    Identify Stakeholders
+                </h2>
+                <div class="mt-4">
+                    <label for="stakeholder-input" class="block text-sm font-medium text-gray-700">List all key stakeholder groups involved.</label>
+                    <div class="mt-1 flex gap-2">
+                        <input type="text" id="stakeholder-input" class="flex-grow block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="e.g., Farmers, Activists, Government">
+                        <button id="add-stakeholder-btn" class="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">Add</button>
+                    </div>
+                    <div id="stakeholder-list" class="mt-4 space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- Step 3: The Diagnostic Gauntlet -->
+            <div id="step3" class="step-card bg-white p-6 rounded-lg shadow-sm border border-gray-200 hidden">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <span class="bg-blue-500 text-white rounded-full h-8 w-8 flex items-center justify-center font-bold">3</span>
+                        The Diagnostic Gauntlet
+                    </h2>
+                    <button id="back-to-step2-btn" class="text-sm text-blue-600 hover:underline">← Go Back to Step 2</button>
+                </div>
+                <div id="diagnostic-questions" class="mt-4 space-y-6"></div>
+            </div>
+            
+            <!-- Generate Report Button -->
+            <div id="generate-report-container" class="text-center hidden">
+                <button id="generate-report-btn" class="bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-green-700 transition text-lg">
+                    Generate Analysis Report
+                </button>
+            </div>
+
+            <!-- Step 4: Analysis Report -->
+            <div id="step4" class="step-card bg-white p-6 rounded-lg shadow-sm border border-gray-200 hidden">
+                <div class="flex justify-between items-center">
+                     <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <span class="bg-blue-500 text-white rounded-full h-8 w-8 flex items-center justify-center font-bold">4</span>
+                        Analysis Report
+                    </h2>
+                    <button id="back-to-step3-btn" class="text-sm text-blue-600 hover:underline">← Go Back to Step 3</button>
+                </div>
+                <div id="report-output" class="mt-4 space-y-4"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Explanation Modal -->
+    <div id="explanation-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="text-xl font-bold">Explanation of the Demo Example</h3>
+                <button id="explanation-close-btn" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+            </div>
+            <div id="explanation-modal-content" class="p-6 overflow-y-auto space-y-4">
+                <div>
+                    <h4 class="font-bold text-lg text-gray-800">Step 1: Define the Goal</h4>
+                    <p class="text-gray-600 mt-1">The problem is that NFL players were suffering from CTE, but the league denied the link. The successful network goal was <strong class="text-gray-900">"Establishing CTE truth and preventing future harm."</strong> This is a strong goal because it focuses on a collective, positive outcome rather than a narrow, institutional one (like "protecting league liability," which was the NFL's failed pseudo-goal).</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-lg text-gray-800">Step 2: Identify Stakeholders</h4>
+                    <p class="text-gray-600 mt-1">The key groups who coordinated successfully were diverse, each bringing a unique capability: <strong class="text-gray-900">Affected Families, Scientists, Legal Professionals, and Journalists.</strong> A successful network requires multiple types of contributors, not just a single group of experts.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-lg text-gray-800">Step 3: The Diagnostic Gauntlet</h4>
+                    <ul class="list-disc list-inside space-y-2 text-gray-600 mt-1">
+                        <li><strong class="text-gray-900">Authenticity:</strong> All groups could advance the goal authentically. Families shared their stories (moral witness), scientists conducted research (evidence), lawyers pursued accountability (procedure), and journalists reported findings (transparency). No group had to compromise its core purpose.</li>
+                        <li><strong class="text-gray-900">Enhancement:</strong> The approaches were critically complementary. Family testimony gave context to scientific research, which in turn provided evidence for legal cases. Journalism amplified all other efforts, creating a feedback loop of success. Their efforts enhanced, rather than competed with, each other.</li>
+                        <li><strong class="text-gray-900">Persistence:</strong> The goal remained meaningful to all groups long-term, surviving media cycles and institutional pressure. This shows it was a genuinely shared objective, not a temporary alignment of interests.</li>
+                        <li><strong class="text-gray-900">Power:</strong> The goal was not controlled by a dominant stakeholder. Its broad nature ("establishing truth") prevented any single group, like the NFL, from defining it in a self-serving way.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-lg text-gray-800">Step 4: Analysis Report</h4>
+                    <p class="text-gray-600 mt-1">Because the goal passes all the diagnostic checks, the report correctly identifies it as a <strong class="text-green-700">"High Potential: Likely a Genuine Network Goal."</strong> This outcome reflects the real-world success of this coordination effort.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // STATE MANAGEMENT
+    let state = { problem: '', goal: '', stakeholders: [], diagnostics: {} };
+
+    // DOM ELEMENTS
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    const step3 = document.getElementById('step3');
+    const step4 = document.getElementById('step4');
+    const problemInput = document.getElementById('problem');
+    const goalInput = document.getElementById('goal');
+    const stakeholderInput = document.getElementById('stakeholder-input');
+    const addStakeholderBtn = document.getElementById('add-stakeholder-btn');
+    const stakeholderList = document.getElementById('stakeholder-list');
+    const diagnosticQuestionsContainer = document.getElementById('diagnostic-questions');
+    const generateReportContainer = document.getElementById('generate-report-container');
+    const generateReportBtn = document.getElementById('generate-report-btn');
+    const reportOutput = document.getElementById('report-output');
+    const demoBtn = document.getElementById('demoBtn');
+    const startNewBtn = document.getElementById('startNewBtn');
+    const backToStep2Btn = document.getElementById('back-to-step2-btn');
+    const backToStep3Btn = document.getElementById('back-to-step3-btn');
+    const showExplanationBtn = document.getElementById('showExplanationBtn');
+    const explanationModal = document.getElementById('explanation-modal');
+    const explanationCloseBtn = document.getElementById('explanation-close-btn');
+
+    // --- CORE APP LOGIC ---
+    const resetApp = () => {
+        state = { problem: '', goal: '', stakeholders: [], diagnostics: {} };
+        problemInput.value = '';
+        goalInput.value = '';
+        stakeholderInput.value = '';
+        stakeholderList.innerHTML = '';
+        step3.classList.add('hidden');
+        generateReportContainer.classList.add('hidden');
+        step4.classList.add('hidden');
+        showExplanationBtn.classList.add('hidden');
+    };
+
+    const renderStakeholders = (isDemo = false) => {
+        stakeholderList.innerHTML = '';
+        state.stakeholders.forEach((stakeholder, index) => {
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between bg-gray-100 p-2 rounded-md';
+            const disabledAttr = isDemo ? 'disabled' : '';
+            div.innerHTML = `<span class="text-gray-800">${stakeholder}</span><button data-index="${index}" class="remove-stakeholder-btn text-red-500 hover:text-red-700 font-bold" ${disabledAttr}>✕</button>`;
+            stakeholderList.appendChild(div);
+        });
+        updateAppVisibility();
+    };
+
+    const renderDiagnosticQuestions = () => {
+        if (state.stakeholders.length === 0) {
+            diagnosticQuestionsContainer.innerHTML = '';
+            return;
+        }
+        const questions = [
+            { id: 'authenticity', text: "Can each stakeholder advance this goal through their authentic approach without compromising their core purpose?" },
+            { id: 'enhancement', text: "Do the different stakeholders' approaches *enhance* each other's effectiveness, or do they *compete*?", type: 'textarea' },
+            { id: 'persistence', text: "Would this goal remain meaningful to all stakeholders even if external circumstances (like media attention or funding) change?" },
+            { id: 'power', text: "Is there a risk that a dominant stakeholder could define the goal in a way that serves their interests while excluding others?" }
+        ];
+        diagnosticQuestionsContainer.innerHTML = '';
+        questions.forEach(q => {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'p-4 border border-gray-200 rounded-lg';
+            let content = `<p class="font-semibold text-gray-800 mb-3">${q.text}</p>`;
+            if (q.type === 'textarea') {
+                content += `<textarea data-question-id="${q.id}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" rows="3" placeholder="Provide a specific example..."></textarea>`;
+            } else {
+                content += '<div class="space-y-2">';
+                state.stakeholders.forEach(s => {
+                    content += `<div class="flex items-center justify-between"><label class="text-gray-700">${s}</label><div class="flex gap-4"><label class="flex items-center gap-1"><input type="radio" name="${q.id}-${s}" value="yes" data-question-id="${q.id}" data-stakeholder="${s}" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"> Yes</label><label class="flex items-center gap-1"><input type="radio" name="${q.id}-${s}" value="no" data-question-id="${q.id}" data-stakeholder="${s}" class="focus:ring-red-500 h-4 w-4 text-red-600 border-gray-300"> No</label></div></div>`;
+                });
+                content += '</div>';
+            }
+            questionDiv.innerHTML = content;
+            diagnosticQuestionsContainer.appendChild(questionDiv);
+        });
+    };
+    
+    const updateAppVisibility = () => {
+        if (state.stakeholders.length > 0) {
+            step3.classList.remove('hidden');
+            generateReportContainer.classList.remove('hidden');
+            renderDiagnosticQuestions();
+        } else {
+            step3.classList.add('hidden');
+            generateReportContainer.classList.add('hidden');
+        }
+    };
+
+    const generateReport = () => {
+        state.diagnostics = {};
+        document.querySelectorAll('[data-question-id]').forEach(input => {
+            const qId = input.dataset.questionId;
+            if (!state.diagnostics[qId]) state.diagnostics[qId] = {};
+            if (input.type === 'textarea') {
+                 state.diagnostics[qId].explanation = input.value;
+            } else if (input.type === 'radio' && input.checked) {
+                const stakeholder = input.dataset.stakeholder;
+                state.diagnostics[qId][stakeholder] = input.value;
+            }
+        });
+
+        let score = 100;
+        let issues = [];
+        const authenticityFailures = Object.values(state.diagnostics.authenticity || {}).filter(v => v === 'no').length;
+        if (authenticityFailures > 0) { score -= 40; issues.push("<strong>Authenticity Concern:</strong> At least one stakeholder cannot advance this goal without compromising their core purpose. A genuine network goal preserves stakeholder authenticity."); }
+        if (!state.diagnostics.enhancement?.explanation || state.diagnostics.enhancement.explanation.length < 10) { score -= 15; issues.push("<strong>Enhancement Concern:</strong> It's unclear if stakeholder approaches are mutually enhancing. When approaches compete rather than enhance, coordination often fails."); }
+        const persistenceFailures = Object.values(state.diagnostics.persistence || {}).filter(v => v === 'no').length;
+        if (persistenceFailures > 0) { score -= 25; issues.push("<strong>Persistence Concern:</strong> The goal may not be meaningful to all stakeholders long-term, suggesting a temporary alignment of interests rather than a shared objective."); }
+        const powerFailures = Object.values(state.diagnostics.power || {}).filter(v => v === 'yes').length;
+        if (powerFailures > 0) { score -= 40; issues.push("<strong>Power Imbalance Risk:</strong> There is a significant risk of this goal being co-opted by a dominant stakeholder. This is a key characteristic of a pseudo-network goal."); }
+
+        let resultTitle, resultColor, resultMessage;
+        if (score >= 75) {
+            resultTitle = "High Potential: Likely a Genuine Network Goal"; resultColor = "bg-green-100 border-green-500 text-green-800";
+            resultMessage = "Your analysis indicates this objective has a strong foundation for successful multi-stakeholder coordination. The stakeholders can likely advance it authentically and their efforts may enhance one another.";
+        } else if (score >= 40) {
+            resultTitle = "Moderate Potential: Contains Pseudo-Goal Characteristics"; resultColor = "bg-yellow-100 border-yellow-500 text-yellow-800";
+            resultMessage = "This goal shows some promise, but there are significant risks identified below. It may be a pseudo-network goal that serves some interests over others. Careful refinement is needed.";
+        } else {
+            resultTitle = "Low Potential: Likely a Pseudo-Network Goal"; resultColor = "bg-red-100 border-red-500 text-red-800";
+            resultMessage = "This objective is unlikely to lead to successful coordination. It shows strong signs of being a pseudo-network goal, where stakeholder approaches conflict and power imbalances may lead to failure.";
+        }
+        
+        let reportHtml = `<div class="p-4 rounded-md bg-gray-100 border border-gray-300"><h3 class="font-bold text-lg mb-2">Goal Analysis: "${state.goal || 'Untitled Goal'}"</h3><div class="p-4 rounded-lg ${resultColor} border"><h4 class="font-bold">${resultTitle}</h4><p>${resultMessage}</p></div>`;
+        if (issues.length > 0) {
+            reportHtml += `<div class="mt-4"><h4 class="font-bold">Key Issues Identified:</h4><ul class="list-disc list-inside mt-2 space-y-1">${issues.map(issue => `<li>${issue}</li>`).join('')}</ul></div>`;
+        }
+        reportHtml += `</div>`;
+        reportOutput.innerHTML = reportHtml;
+        step4.classList.remove('hidden');
+        step4.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    // --- EVENT LISTENERS ---
+    startNewBtn.addEventListener('click', resetApp);
+    addStakeholderBtn.addEventListener('click', () => {
+        const stakeholderName = stakeholderInput.value.trim();
+        if (stakeholderName && !state.stakeholders.includes(stakeholderName)) {
+            state.stakeholders.push(stakeholderName);
+            stakeholderInput.value = '';
+            renderStakeholders();
+        }
+    });
+    stakeholderInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); addStakeholderBtn.click(); } });
+    stakeholderList.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-stakeholder-btn')) {
+            state.stakeholders.splice(e.target.dataset.index, 1);
+            renderStakeholders();
+        }
+    });
+    problemInput.addEventListener('input', (e) => state.problem = e.target.value);
+    goalInput.addEventListener('input', (e) => state.goal = e.target.value);
+    generateReportBtn.addEventListener('click', generateReport);
+
+    backToStep2Btn.addEventListener('click', () => {
+        step3.classList.add('hidden');
+        generateReportContainer.classList.add('hidden');
+        step2.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    backToStep3Btn.addEventListener('click', () => {
+        step4.classList.add('hidden');
+        step3.scrollIntoView({ behavior: 'smooth' });
+    });
+    
+    // --- SIMPLIFIED DEMO LOGIC ---
+    const loadDemoExample = () => {
+        resetApp();
+
+        // Step 1
+        problemInput.value = "Former NFL players were suffering from severe neurological decline (CTE) linked to head trauma, but the league was denying the connection.";
+        goalInput.value = "Establishing CTE truth and preventing future harm";
+        state.problem = problemInput.value;
+        state.goal = goalInput.value;
+        
+        // Step 2
+        state.stakeholders = ["Affected Families", "Scientists", "Legal Professionals", "Journalists"];
+        renderStakeholders(true); // pass true to disable remove buttons
+
+        // Step 3 (pre-fill answers)
+        document.querySelectorAll('[data-question-id="authenticity"][value="yes"]').forEach(radio => radio.checked = true);
+        document.querySelector('[data-question-id="enhancement"]').value = "Family testimony provided moral authority for scientific research. Research findings gave legal cases evidential backing. Journalism amplified both, creating public pressure.";
+        document.querySelectorAll('[data-question-id="persistence"][value="yes"]').forEach(radio => radio.checked = true);
+        document.querySelectorAll('[data-question-id="power"][value="no"]').forEach(radio => radio.checked = true);
+
+        // Step 4
+        generateReport();
+
+        showExplanationBtn.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    demoBtn.addEventListener('click', loadDemoExample);
+    showExplanationBtn.addEventListener('click', () => explanationModal.classList.remove('hidden'));
+    explanationCloseBtn.addEventListener('click', () => explanationModal.classList.add('hidden'));
+
+});
+</script>
+</body>
+</html>
